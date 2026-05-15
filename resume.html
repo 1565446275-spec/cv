@@ -1312,7 +1312,7 @@
 
   <!-- ===== 评价 ===== -->
   <section class="reviews">
-    <h2 class="heading">能力<span">评价</span></h2>
+    <h2 class="heading">能力<span>评价</span></h2>
     <div class="review-container">
 
       <div class="review-card">
@@ -1402,10 +1402,9 @@
     const header = document.querySelector(".header");
     const barBox = document.querySelector(".bars-box");
 
-    // On page load, dismiss the bars overlay after animation completes
-    setTimeout(() => {
-      barBox.classList.remove("active");
-    }, 3200);
+    // Keep navigation deterministic on hosted pages: show content immediately after switching.
+    const hideBars = () => barBox.classList.remove("active");
+    setTimeout(hideBars, 1800);
 
     menuIcon.addEventListener("click", () => {
       menuIcon.classList.toggle("bx-x");
@@ -1413,14 +1412,9 @@
     });
 
     const activePage = () => {
-      header.classList.remove("active");
-      setTimeout(() => header.classList.add("active"), 1100);
-
+      header.classList.add("active");
       navLinks.forEach(link => link.classList.remove("active"));
-
-      barBox.classList.remove("active");
-      setTimeout(() => barBox.classList.add("active"), 1100);
-
+      hideBars();
       sections.forEach(section => section.classList.remove("active"));
       menuIcon.classList.remove("bx-x");
       navBar.classList.remove("active");
@@ -1429,13 +1423,8 @@
     const showPage = (idx) => {
       activePage();
       navLinks[idx].classList.add("active");
-      setTimeout(() => {
-        sections[idx].classList.add("active");
-        // Dismiss bars after content animation delay so content is visible
-        setTimeout(() => {
-          barBox.classList.remove("active");
-        }, 1700); // after 1.6s show-content delay + buffer
-      }, 1100);
+      sections[idx].classList.add("active");
+      hideBars();
     };
 
     navLinks.forEach((link, idx) => {
