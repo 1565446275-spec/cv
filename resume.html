@@ -1429,7 +1429,13 @@
     const showPage = (idx) => {
       activePage();
       navLinks[idx].classList.add("active");
-      setTimeout(() => sections[idx].classList.add("active"), 1100);
+      setTimeout(() => {
+        sections[idx].classList.add("active");
+        // Dismiss bars after content animation delay so content is visible
+        setTimeout(() => {
+          barBox.classList.remove("active");
+        }, 1700); // after 1.6s show-content delay + buffer
+      }, 1100);
     };
 
     navLinks.forEach((link, idx) => {
