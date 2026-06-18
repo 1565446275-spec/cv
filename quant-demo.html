@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>量化交易软件演示</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      color: #18212f;
+      background: #f4f7fb;
+    }
+    a { color: inherit; text-decoration: none; }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px min(6vw, 72px);
+      background: rgba(255,255,255,.92);
+      border-bottom: 1px solid #dfe6ef;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+    .nav b { font-size: 20px; }
+    .nav span { color: #0f766e; }
+    .nav div { display: flex; gap: 16px; flex-wrap: wrap; color: #657184; font-weight: 700; }
+    .hero {
+      padding: 54px min(6vw, 72px) 30px;
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(360px, 1.05fr);
+      gap: 30px;
+      align-items: center;
+      background:
+        linear-gradient(135deg, rgba(15,118,110,.12), transparent 45%),
+        linear-gradient(180deg, #ffffff, #f4f7fb);
+    }
+    h1 { margin: 0 0 16px; font-size: clamp(36px, 6vw, 64px); line-height: 1.04; letter-spacing: 0; }
+    .hero p { color: #5f6b7a; font-size: 17px; line-height: 1.8; margin: 0; max-width: 760px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .badges span { padding: 7px 10px; border-radius: 999px; background: #e8f7f3; color: #0f766e; font-weight: 800; font-size: 13px; }
+    .terminal {
+      border: 1px solid #233044;
+      border-radius: 8px;
+      background: #111827;
+      color: #d1fae5;
+      overflow: hidden;
+      box-shadow: 0 22px 46px rgba(16,24,39,.22);
+    }
+    .terminal-head { height: 36px; display: flex; gap: 8px; align-items: center; padding: 0 14px; background: #1f2937; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; }
+    .dot:nth-child(2) { background: #f59e0b; }
+    .dot:nth-child(3) { background: #22c55e; }
+    pre { margin: 0; padding: 18px; white-space: pre-wrap; line-height: 1.65; font-size: 13px; }
+    .wrap { padding: 32px min(6vw, 72px) 48px; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .metric {
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      background: #fff;
+      padding: 16px;
+    }
+    .metric span { color: #657184; font-size: 13px; }
+    .metric strong { display: block; margin-top: 8px; font-size: 26px; }
+    .positive { color: #0f9f6e; }
+    .negative { color: #dc2626; }
+    .dash {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(310px, .8fr);
+      gap: 18px;
+    }
+    .panel {
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      background: #fff;
+      padding: 18px;
+      min-width: 0;
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 22px; }
+    .chart-box { height: 390px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 11px 8px; border-bottom: 1px solid #edf1f6; text-align: left; }
+    th { color: #657184; font-size: 12px; }
+    .flow { display: grid; gap: 10px; }
+    .flow div { padding: 13px; border-radius: 8px; background: #f7fafc; border: 1px solid #e2e8f0; }
+    .flow b { display: block; margin-bottom: 5px; }
+    .note {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid #f4d69d;
+      border-radius: 8px;
+      background: #fff7e6;
+      color: #735018;
+      line-height: 1.7;
+    }
+    @media (max-width: 980px) {
+      .hero, .dash { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .nav { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .metrics { grid-template-columns: 1fr; }
+      .chart-box { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <a href="projects.html"><b>Quant<span> Framework</span></b></a>
+    <div><a href="projects.html">项目总览</a><a href="efinance-demo.html">小程序演示</a><a href="index.html">简历主页</a></div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>量化交易与策略回测软件</h1>
+      <p>项目基于 Python 封装行情数据、技术指标、交易策略、回测引擎、信号监控和结果可视化。演示页用静态数据复现软件输出，方便面试官快速理解框架能力。</p>
+      <div class="badges"><span>Python</span><span>Moving Average</span><span>RSI</span><span>MACD</span><span>Backtest</span><span>Risk Control</span></div>
+    </div>
+    <div class="terminal">
+      <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <pre>BacktestEngine(initial_cash=100000)
+data = add_technical_indicators(generate_simulated_data())
+strategies = [MA(5,20), MA(10,30), RSI(14), MACD()]
+results = engine.run_multiple(data, strategies)
+
+Best Strategy: MA Cross (10,30)
+Total Return: +18.6%
+Max Drawdown: -7.8%
+Sharpe Ratio: 1.34</pre>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="metrics">
+      <div class="metric"><span>总收益率</span><strong class="positive">+18.6%</strong></div>
+      <div class="metric"><span>年化收益</span><strong class="positive">+9.1%</strong></div>
+      <div class="metric"><span>最大回撤</span><strong class="negative">-7.8%</strong></div>
+      <div class="metric"><span>夏普比率</span><strong>1.34</strong></div>
+    </section>
+
+    <section class="dash">
+      <div class="panel">
+        <h2>策略净值曲线</h2>
+        <div class="chart-box"><canvas id="equityChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>系统模块</h2>
+        <div class="flow">
+          <div><b>数据层</b><span>CSV、A 股接口、模拟行情、技术指标扩展。</span></div>
+          <div><b>策略层</b><span>双均线交叉、RSI 超买超卖、MACD 背离。</span></div>
+          <div><b>回测层</b><span>手续费、滑点、交易明细、净值曲线。</span></div>
+          <div><b>风控层</b><span>最大回撤、胜率、盈亏比、支撑压力监控。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash" style="margin-top:18px">
+      <div class="panel">
+        <h2>策略对比</h2>
+        <table>
+          <thead><tr><th>策略</th><th>收益率</th><th>回撤</th><th>胜率</th><th>交易次数</th></tr></thead>
+          <tbody>
+            <tr><td>MA Cross (5,20)</td><td class="positive">+12.4%</td><td class="negative">-8.9%</td><td>58%</td><td>16</td></tr>
+            <tr><td>MA Cross (10,30)</td><td class="positive">+18.6%</td><td class="negative">-7.8%</td><td>63%</td><td>11</td></tr>
+            <tr><td>RSI Strategy</td><td class="positive">+6.2%</td><td class="negative">-5.4%</td><td>55%</td><td>9</td></tr>
+            <tr><td>MACD Divergence</td><td class="positive">+9.8%</td><td class="negative">-10.1%</td><td>50%</td><td>8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>简历可写亮点</h2>
+        <table>
+          <tbody>
+            <tr><td>搭建模块化量化交易框架，覆盖数据加载、指标计算、信号生成、回测评估和可视化输出。</td></tr>
+            <tr><td>实现多策略对比，输出收益率、夏普比率、最大回撤、胜率、盈亏比和交易明细。</td></tr>
+            <tr><td>引入手续费、滑点和支撑压力位监控，提高策略验证的真实度和风险意识。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="note">说明：本页用于项目展示，图表为根据本地框架能力整理的演示数据；实际交易需连接真实行情、账户系统并完成合规审核。</div>
+  </main>
+
+  <script>
+    const labels = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+    const ctx = document.getElementById("equityChart");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "MA Cross (10,30)",
+            data: [100, 102, 101, 106, 109, 107, 112, 116, 114, 119, 121, 118.6],
+            borderColor: "#0f766e",
+            backgroundColor: "rgba(15,118,110,.12)",
+            fill: true,
+            tension: .35,
+            pointRadius: 3
+          },
+          {
+            label: "基准",
+            data: [100, 99, 101, 103, 102, 104, 106, 105, 108, 109, 111, 110],
+            borderColor: "#94a3b8",
+            borderDash: [6, 6],
+            tension: .35,
+            pointRadius: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+        scales: {
+          y: { ticks: { callback: value => value + "%" }, grid: { color: "#edf2f7" } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

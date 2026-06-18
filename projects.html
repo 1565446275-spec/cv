@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>项目作品集 | 张梓言</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      color: #18212f;
+      background: #f5f7fb;
+    }
+    a { color: inherit; text-decoration: none; }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px min(6vw, 72px);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid #e3e8f0;
+    }
+    .brand { font-weight: 800; font-size: 20px; }
+    .brand span { color: #1f8f68; }
+    .nav-links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; font-weight: 700; color: #5f6b7a; }
+    .hero {
+      padding: 72px min(6vw, 72px) 36px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      gap: 42px;
+      align-items: center;
+      background:
+        linear-gradient(135deg, rgba(31,143,104,.10), transparent 44%),
+        linear-gradient(180deg, #ffffff, #f5f7fb);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid #bfdccb;
+      border-radius: 999px;
+      color: #1f8f68;
+      background: #f0fbf5;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 18px 0 18px;
+      font-size: clamp(36px, 7vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero p {
+      margin: 0;
+      color: #5f6b7a;
+      font-size: 17px;
+      line-height: 1.8;
+      max-width: 760px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid #1f8f68;
+      background: #1f8f68;
+      color: #fff;
+      font-weight: 800;
+    }
+    .btn.secondary { color: #1f8f68; background: transparent; }
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .stat {
+      min-height: 132px;
+      padding: 18px;
+      border: 1px solid #e3e8f0;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 14px 32px rgba(39, 54, 78, .08);
+    }
+    .stat i { color: #1f8f68; font-size: 26px; }
+    .stat strong { display: block; margin: 12px 0 6px; font-size: 24px; }
+    .stat span { color: #657184; font-size: 13px; line-height: 1.5; }
+    .section { padding: 46px min(6vw, 72px); }
+    .section h2 { margin: 0 0 12px; font-size: 34px; }
+    .section > p { margin: 0 0 24px; color: #657184; line-height: 1.8; max-width: 840px; }
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+    .project {
+      display: grid;
+      grid-template-rows: 250px 1fr;
+      overflow: hidden;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 18px 42px rgba(37, 51, 73, .09);
+    }
+    .visual {
+      position: relative;
+      padding: 20px;
+      color: #fff;
+      overflow: hidden;
+    }
+    .visual.finance {
+      background:
+        radial-gradient(circle at 78% 22%, rgba(255,255,255,.28), transparent 28%),
+        linear-gradient(135deg, #de6428, #eba134 58%, #297c6c);
+    }
+    .visual.quant {
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.14) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,.12) 1px, transparent 1px),
+        linear-gradient(135deg, #1d2a3d, #0f766e);
+      background-size: auto, 34px 34px, auto;
+    }
+    .phone-mini {
+      width: 155px;
+      height: 215px;
+      margin-left: auto;
+      border: 7px solid rgba(17,24,39,.92);
+      border-radius: 22px;
+      background: rgba(255,255,255,.94);
+      color: #1d2633;
+      padding: 12px;
+      box-shadow: 0 18px 32px rgba(0,0,0,.22);
+    }
+    .phone-mini b { display: block; font-size: 15px; margin-bottom: 8px; }
+    .phone-mini div { height: 24px; margin-top: 8px; border-radius: 6px; background: #eef3f9; }
+    .chart-mini {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 24px;
+      height: 108px;
+      display: flex;
+      align-items: end;
+      gap: 8px;
+    }
+    .chart-mini span {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, #68e1b5, #2dd4bf);
+      opacity: .88;
+    }
+    .project-body { padding: 22px; }
+    .project-body h3 { margin: 0 0 10px; font-size: 23px; }
+    .project-body p { margin: 0 0 16px; color: #5f6b7a; line-height: 1.75; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .tags span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef4f8;
+      color: #536171;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .case {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .case div {
+      padding: 18px;
+      border: 1px solid #e3e8f0;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .case b { display: block; margin-bottom: 8px; font-size: 18px; }
+    .case span { color: #657184; line-height: 1.7; }
+    footer {
+      padding: 28px min(6vw, 72px);
+      color: #657184;
+      border-top: 1px solid #e3e8f0;
+      background: #fff;
+    }
+    @media (max-width: 900px) {
+      .hero, .project-grid, .case { grid-template-columns: 1fr; }
+      .overview { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .nav { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .overview { grid-template-columns: 1fr; }
+      .project { grid-template-rows: 220px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="index.html">Zhang<span>.</span> Projects</a>
+    <nav class="nav-links">
+      <a href="index.html">简历主页</a>
+      <a href="efinance-demo.html">微信小程序演示</a>
+      <a href="quant-demo.html">量化交易演示</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow"><i class="bx bx-link-external"></i> 可放入简历的公网项目展示</span>
+        <h1>金融科技项目作品集</h1>
+        <p>整理两个重点项目为可直接访问的展示页面：一个是面向银行理财场景的微信小程序，一个是基于 Python 的量化交易与回测框架。页面突出产品理解、数据建模、风险控制和可视化表达能力。</p>
+        <div class="hero-actions">
+          <a class="btn" href="efinance-demo.html"><i class="bx bx-mobile-alt"></i> 看小程序演示</a>
+          <a class="btn secondary" href="quant-demo.html"><i class="bx bx-candles"></i> 看量化演示</a>
+        </div>
+      </div>
+      <div class="overview">
+        <div class="stat"><i class="bx bx-mobile-alt"></i><strong>小程序</strong><span>直播理财、短视频科普、AI 推荐、用户画像。</span></div>
+        <div class="stat"><i class="bx bx-candles"></i><strong>量化框架</strong><span>数据加载、技术指标、策略信号、回测评估。</span></div>
+        <div class="stat"><i class="bx bx-line-chart"></i><strong>可视化</strong><span>收益曲线、回撤、信号点、组合指标展示。</span></div>
+        <div class="stat"><i class="bx bx-shield-quarter"></i><strong>风控</strong><span>风险等级、适当性提示、止损和回撤意识。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>项目入口</h2>
+      <p>两个演示页均为静态页面，适合发给面试官或放在简历 PDF/个人主页中，手机和电脑都能打开。</p>
+      <div class="project-grid">
+        <article class="project">
+          <div class="visual finance">
+            <div class="phone-mini">
+              <b>e理财</b>
+              <div style="width:80%"></div>
+              <div style="width:100%;height:58px;background:#fde5c7"></div>
+              <div style="width:92%"></div>
+              <div style="width:70%"></div>
+            </div>
+          </div>
+          <div class="project-body">
+            <h3>e理财微信小程序</h3>
+            <p>围绕银行理财用户旅程设计，从直播预约、短视频科普、产品推荐到风险提示，呈现面向真实业务的移动端产品能力。</p>
+            <div class="tags"><span>微信小程序</span><span>金融产品运营</span><span>用户画像</span><span>精准推荐</span></div>
+            <a class="btn" href="efinance-demo.html"><i class="bx bx-show"></i> 打开演示</a>
+          </div>
+        </article>
+
+        <article class="project">
+          <div class="visual quant">
+            <div class="chart-mini">
+              <span style="height:42%"></span><span style="height:54%"></span><span style="height:38%"></span><span style="height:72%"></span><span style="height:62%"></span><span style="height:86%"></span><span style="height:68%"></span><span style="height:94%"></span><span style="height:76%"></span>
+            </div>
+          </div>
+          <div class="project-body">
+            <h3>量化交易软件</h3>
+            <p>基于 Python 封装数据、策略、回测、监控与可视化模块，支持双均线、RSI、MACD 等策略验证和绩效指标输出。</p>
+            <div class="tags"><span>Python</span><span>Backtest</span><span>MACD/RSI</span><span>Risk Control</span></div>
+            <a class="btn" href="quant-demo.html"><i class="bx bx-show"></i> 打开演示</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>简历表述建议</h2>
+      <div class="case">
+        <div><b>产品能力</b><span>将理财直播、短视频教育和智能推荐整合为小程序入口，提升新手用户理解和转化路径。</span></div>
+        <div><b>技术能力</b><span>使用 Python 搭建策略回测框架，完成行情模拟、技术指标、交易信号和绩效评估。</span></div>
+        <div><b>业务理解</b><span>在项目中体现投资者适当性、风险提示、回撤控制和收益风险权衡。</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 张梓言 | 金融科技项目作品集</footer>
+</body>
+</html>
