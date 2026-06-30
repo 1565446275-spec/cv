@@ -675,6 +675,9 @@
         localStorage.setItem("quantApiBase", fromQuery.replace(/\/$/, ""));
         return fromQuery.replace(/\/$/, "");
       }
+      if (window.location.protocol === "file:") {
+        return "http://127.0.0.1:8000";
+      }
       const host = window.location.hostname;
       if (host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
         return `${window.location.protocol}//${host}:8000`;
