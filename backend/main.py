@@ -12,7 +12,7 @@ OpenBB 基于 AGPLv3 许可证发布：https://github.com/OpenBB-finance/OpenBB
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +45,13 @@ logging.basicConfig(
     format="%(asctime)s | %(name)-16s | %(levelname)-5s | %(message)s",
 )
 logger = logging.getLogger("main")
+
+INDICATOR_WARMUP_DAYS = 365
+
+
+def _warmup_start(start: str, days: int = INDICATOR_WARMUP_DAYS) -> str:
+    start_date = datetime.strptime(start, "%Y-%m-%d").date()
+    return (start_date - timedelta(days=days)).isoformat()
 
 # ---------------------------------------------------------------------------
 # FastAPI 应用
@@ -360,10 +367,11 @@ async def scan_alerts(req: AlertScanRequest):
     alerts: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
     data_map: dict[str, pd.DataFrame] = {}
+    calc_start = _warmup_start(req.start)
 
     for symbol in req.symbols:
         try:
-            df = fetch_historical_data(symbol, req.start, req.end)
+            df = fetch_historical_data(symbol, calc_start, req.end)
             data_map[symbol] = df
             alerts.extend(scan_technical_alerts(symbol, df, req.ma20_tolerance))
         except RuntimeError as exc:
@@ -385,6 +393,8 @@ async def scan_alerts(req: AlertScanRequest):
     return {
         "start": req.start,
         "end": req.end,
+        "calculation_start": calc_start,
+        "warmup_days": INDICATOR_WARMUP_DAYS,
         "symbols": req.symbols,
         "count": len(alerts),
         "alerts": alerts,
@@ -400,10 +410,11 @@ async def predict_etfs(req: ETFPredictRequest):
 
     predictions: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
+    calc_start = _warmup_start(req.start)
 
     for symbol in req.symbols:
         try:
-            df = fetch_historical_data(symbol, req.start, req.end)
+            df = fetch_historical_data(symbol, calc_start, req.end)
             predictions.append(predict_etf(symbol, df, req.horizon_days))
         except RuntimeError as exc:
             errors.append({"symbol": symbol, "error": str(exc)})
@@ -414,6 +425,8 @@ async def predict_etfs(req: ETFPredictRequest):
     return {
         "start": req.start,
         "end": req.end,
+        "calculation_start": calc_start,
+        "warmup_days": INDICATOR_WARMUP_DAYS,
         "horizon_days": req.horizon_days,
         "symbols": req.symbols,
         "count": len(predictions),
