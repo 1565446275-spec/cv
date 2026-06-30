@@ -665,9 +665,9 @@
     // =====================================================================
     // API 地址优先级：
     // 1. URL 参数 ?api=http://后端地址
-    // 2. localStorage.quantApiBase
-    // 3. 本地/局域网访问时自动使用当前主机的 8000 端口
-    // 4. 云端一体部署时默认同源 API
+    // 2. 本地/局域网访问时自动使用当前主机的 8000 端口
+    // 3. Railway/Render 等云端一体部署时强制同源 API
+    // 4. 其他静态托管页面才读取 localStorage.quantApiBase
     const API_BASE = (() => {
       const params = new URLSearchParams(window.location.search);
       const fromQuery = params.get("api");
@@ -675,14 +675,30 @@
         localStorage.setItem("quantApiBase", fromQuery.replace(/\/$/, ""));
         return fromQuery.replace(/\/$/, "");
       }
-      const saved = localStorage.getItem("quantApiBase");
-      if (saved) return saved.replace(/\/$/, "");
       const host = window.location.hostname;
       if (host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
         return `${window.location.protocol}//${host}:8000`;
       }
+      if (/railway\.app$|up\.railway\.app$|onrender\.com$|vercel\.app$/.test(host)) {
+        localStorage.removeItem("quantApiBase");
+        return window.location.origin;
+      }
+      const saved = localStorage.getItem("quantApiBase");
+      if (saved) return saved.replace(/\/$/, "");
       return window.location.origin;
     })();
+
+    async function apiFetch(path, options = {}) {
+      try {
+        return await fetch(`${API_BASE}${path}`, options);
+      } catch (err) {
+        const host = window.location.hostname;
+        const isCloudHost = /railway\.app$|up\.railway\.app$|onrender\.com$|vercel\.app$/.test(host);
+        if (!isCloudHost || API_BASE === window.location.origin) throw err;
+        localStorage.removeItem("quantApiBase");
+        return fetch(`${window.location.origin}${path}`, options);
+      }
+    }
 
     // =====================================================================
     // 策略参数定义
@@ -826,7 +842,7 @@
       tradeCount.textContent = "";
 
       try {
-        const resp = await fetch(`${API_BASE}/api/backtest`, {
+        const resp = await apiFetch(`/api/backtest`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -879,7 +895,7 @@
       factorRank.innerHTML = "";
 
       try {
-        const resp = await fetch(`${API_BASE}/api/alerts/scan`, {
+        const resp = await apiFetch(`/api/alerts/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -929,7 +945,7 @@
       etfPredictionList.innerHTML = `<div class="prediction-card"><p>正在计算 ETF 预测，请稍候...</p></div>`;
 
       try {
-        const resp = await fetch(`${API_BASE}/api/etf/predict`, {
+        const resp = await apiFetch(`/api/etf/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -960,7 +976,7 @@
 
     async function loadCtpStatus() {
       try {
-        const resp = await fetch(`${API_BASE}/api/ctp/status`);
+        const resp = await apiFetch(`/api/ctp/status`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const status = await resp.json();
         const modeText = status.mode === "live_ready" ? "真实 CTP 就绪" : "仿真模式";
@@ -992,7 +1008,7 @@
       derivativeList.innerHTML = `<div class="prediction-card"><p>正在扫描期货期权合约，请稍候...</p></div>`;
 
       try {
-        const resp = await fetch(`${API_BASE}/api/derivatives/scan`, {
+        const resp = await apiFetch(`/api/derivatives/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1204,6 +1220,9 @@
 
     function formatRequestError(err) {
       const message = String(err?.message || err || "");
+      if (/Failed to fetch|NetworkError|Load failed/i.test(message)) {
+        return `无法连接后端服务。当前 API 地址：${API_BASE || window.location.origin}。请确认 Railway 服务已部署成功，并用 Railway 域名打开 /quant-demo.html。`;
+      }
       if (/HTTP 502|HTTP 503|HTTP 504/i.test(message)) {
         return "服务端临时取数超时，请稍后重试。云端部署场景下，系统会优先使用演示数据兜底。";
       }
