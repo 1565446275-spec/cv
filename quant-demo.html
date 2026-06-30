@@ -667,7 +667,7 @@
     // 1. URL 参数 ?api=http://后端地址
     // 2. localStorage.quantApiBase
     // 3. 本地/局域网访问时自动使用当前主机的 8000 端口
-    // 4. GitHub Pages 等静态部署时必须配置公网后端地址
+    // 4. 云端一体部署时默认同源 API
     const API_BASE = (() => {
       const params = new URLSearchParams(window.location.search);
       const fromQuery = params.get("api");
@@ -681,7 +681,7 @@
       if (host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
         return `${window.location.protocol}//${host}:8000`;
       }
-      return "";
+      return window.location.origin;
     })();
 
     // =====================================================================
