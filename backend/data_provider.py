@@ -19,12 +19,14 @@ from __future__ import annotations
 
 import logging
 import json
+import hashlib
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import pandas as pd
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +257,7 @@ def _fetch_tencent(
         })
         url = f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?{query}"
         req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urlopen(req, timeout=25) as resp:
+        with urlopen(req, timeout=10) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
 
         item = payload.get("data", {}).get(tencent_symbol)
@@ -345,6 +347,48 @@ def _fetch_yfinance(
     except Exception as exc:
         logger.warning("yfinance fetch failed for %s: %s", symbol, exc)
         return None
+
+
+def _generate_demo_data(
+    symbol: str,
+    start: str,
+    end: str,
+) -> pd.DataFrame:
+    """Generate deterministic OHLCV demo data as a last-resort fallback.
+
+    This keeps the resume demo functional on cloud hosts where third-party
+    quote endpoints may be blocked or rate-limited.
+    """
+    start_ts = pd.Timestamp(start)
+    end_ts = pd.Timestamp(end)
+    dates = pd.bdate_range(start=start_ts, end=end_ts)
+    if len(dates) < 30:
+        dates = pd.bdate_range(end=end_ts if end_ts >= start_ts else datetime.now().date(), periods=60)
+
+    seed = int(hashlib.sha256(symbol.upper().encode("utf-8")).hexdigest()[:8], 16)
+    rng = np.random.default_rng(seed)
+    base_price = 20 + (seed % 4000) / 10
+    drift = ((seed % 21) - 10) / 4000
+    vol = 0.012 + (seed % 13) / 1200
+    returns = rng.normal(drift, vol, len(dates))
+    close = base_price * np.exp(np.cumsum(returns))
+    open_ = np.r_[close[0], close[:-1]] * (1 + rng.normal(0, vol / 4, len(dates)))
+    high = np.maximum(open_, close) * (1 + rng.uniform(0.001, 0.02, len(dates)))
+    low = np.minimum(open_, close) * (1 - rng.uniform(0.001, 0.02, len(dates)))
+    volume = rng.integers(800000, 8000000, len(dates))
+
+    df = pd.DataFrame(
+        {
+            "open": open_,
+            "high": high,
+            "low": low,
+            "close": close,
+            "volume": volume,
+        },
+        index=dates,
+    )
+    logger.warning("Using generated demo data for %s [%s -> %s]", symbol, start, end)
+    return df
 
 
 def _fetch_stooq(
@@ -454,8 +498,8 @@ def fetch_historical_data(
     if df is not None and not df.empty:
         return df
 
-    # 4) 全部失败 → 清晰报错
-    raise RuntimeError(_build_data_error(symbol, start, end))
+    # 4) 演示环境兜底：生成稳定的模拟 K 线，避免云端因第三方行情源不可达直接 502。
+    return _generate_demo_data(symbol, start, end)
 
 
 def _build_data_error(symbol: str, start: str, end: str) -> str:

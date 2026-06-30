@@ -900,7 +900,7 @@
         const result = await resp.json();
         renderAlerts(result);
       } catch (err) {
-        alertList.innerHTML = `<div class="alert-card sell"><p>扫描失败：${escapeHtml(err.message)}</p></div>`;
+        alertList.innerHTML = `<div class="alert-card sell"><p>扫描失败：${escapeHtml(formatRequestError(err))}</p></div>`;
       } finally {
         btnScanAlerts.disabled = false;
         btnScanAlerts.classList.remove("loading");
@@ -948,7 +948,7 @@
         const result = await resp.json();
         renderEtfPredictions(result);
       } catch (err) {
-        etfPredictionList.innerHTML = `<div class="prediction-card bearish"><p>预测失败：${escapeHtml(err.message)}</p></div>`;
+        etfPredictionList.innerHTML = `<div class="prediction-card bearish"><p>预测失败：${escapeHtml(formatRequestError(err))}</p></div>`;
       } finally {
         btnPredictEtf.disabled = false;
         btnPredictEtf.classList.remove("loading");
@@ -1012,7 +1012,7 @@
         const result = await resp.json();
         renderDerivatives(result);
       } catch (err) {
-        derivativeList.innerHTML = `<div class="prediction-card bearish"><p>扫描失败：${escapeHtml(err.message)}</p></div>`;
+        derivativeList.innerHTML = `<div class="prediction-card bearish"><p>扫描失败：${escapeHtml(formatRequestError(err))}</p></div>`;
       } finally {
         btnScanDerivatives.disabled = false;
         btnScanDerivatives.classList.remove("loading");
@@ -1200,6 +1200,14 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    function formatRequestError(err) {
+      const message = String(err?.message || err || "");
+      if (/HTTP 502|HTTP 503|HTTP 504/i.test(message)) {
+        return "服务端临时取数超时，请稍后重试。云端部署场景下，系统会优先使用演示数据兜底。";
+      }
+      return message;
     }
 
     // =====================================================================
