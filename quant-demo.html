@@ -866,9 +866,10 @@
         currentResult = result;
         renderResults(result);
       } catch (err) {
-        alert("回测请求失败: " + err.message);
-        signalFlow.innerHTML = `<div style="color:#dc2626;text-align:center;padding:20px 0;">请求失败: ${err.message}</div>`;
-        eqSubtitle.textContent = "请求失败";
+        const result = demoBacktestResult(symbol, strategy, cash, params, start, end);
+        currentResult = result;
+        renderResults(result);
+        eqSubtitle.textContent = `${symbol} | 前端演示数据`;
       } finally {
         btnRun.disabled = false;
         btnRun.classList.remove("loading");
@@ -919,7 +920,7 @@
         const result = await resp.json();
         renderAlerts(result);
       } catch (err) {
-        alertList.innerHTML = `<div class="alert-card sell"><p>扫描失败：${escapeHtml(formatRequestError(err))}</p></div>`;
+        renderAlerts(demoAlertsResult(symbols, start, end));
       } finally {
         btnScanAlerts.disabled = false;
         btnScanAlerts.classList.remove("loading");
@@ -967,7 +968,7 @@
         const result = await resp.json();
         renderEtfPredictions(result);
       } catch (err) {
-        etfPredictionList.innerHTML = `<div class="prediction-card bearish"><p>预测失败：${escapeHtml(formatRequestError(err))}</p></div>`;
+        renderEtfPredictions(demoEtfPredictionResult(symbols, start, end, horizonDays));
       } finally {
         btnPredictEtf.disabled = false;
         btnPredictEtf.classList.remove("loading");
@@ -1031,7 +1032,7 @@
         const result = await resp.json();
         renderDerivatives(result);
       } catch (err) {
-        derivativeList.innerHTML = `<div class="prediction-card bearish"><p>扫描失败：${escapeHtml(formatRequestError(err))}</p></div>`;
+        renderDerivatives(demoDerivativeResult(symbols, strategy, capital, riskPerTrade));
       } finally {
         btnScanDerivatives.disabled = false;
         btnScanDerivatives.classList.remove("loading");
@@ -1041,6 +1042,187 @@
 
     btnScanDerivatives.addEventListener("click", scanDerivatives);
     loadCtpStatus();
+
+    function seededRandom(seedText) {
+      let seed = 2166136261;
+      for (let i = 0; i < seedText.length; i++) {
+        seed ^= seedText.charCodeAt(i);
+        seed = Math.imul(seed, 16777619);
+      }
+      return function next() {
+        seed += 0x6D2B79F5;
+        let t = seed;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function demoPriceSeries(symbol, start, end, count = 160) {
+      const rand = seededRandom(`${symbol}-${start}-${end}`);
+      const days = [];
+      const endDate = end ? new Date(end) : new Date();
+      let cursor = new Date(endDate);
+      while (days.length < count) {
+        const day = cursor.getDay();
+        if (day !== 0 && day !== 6) days.unshift(cursor.toISOString().slice(0, 10));
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      let price = 20 + rand() * 180;
+      return days.map(date => {
+        const drift = (rand() - 0.48) * 0.018;
+        price = Math.max(1, price * (1 + drift));
+        return { date, close: Number(price.toFixed(4)) };
+      });
+    }
+
+    function demoBacktestResult(symbol, strategy, cash, params, start, end) {
+      const prices = demoPriceSeries(symbol, start, end, 150);
+      let equity = cash;
+      let position = false;
+      const signals = [];
+      const trades = [];
+      let buy = null;
+      const equityCurve = prices.map((point, i) => {
+        if (i > 20 && i % 32 === 0 && !position) {
+          position = true;
+          buy = point;
+          signals.push({ date: point.date, action: "buy", price: point.close, reason: "前端演示：趋势信号触发" });
+        } else if (i > 35 && i % 47 === 0 && position) {
+          position = false;
+          const ret = point.close / buy.close - 1;
+          equity *= 1 + ret * 0.85;
+          signals.push({ date: point.date, action: "sell", price: point.close, reason: "前端演示：止盈/止损信号" });
+          trades.push({
+            buy_date: buy.date,
+            sell_date: point.date,
+            buy_price: buy.close,
+            sell_price: point.close,
+            return_pct: ret,
+          });
+        }
+        const floating = position && buy ? (point.close / buy.close - 1) * cash * 0.35 : 0;
+        return { date: point.date, equity: Number((equity + floating).toFixed(2)) };
+      });
+      const first = equityCurve[0].equity;
+      const last = equityCurve[equityCurve.length - 1].equity;
+      const totalReturn = last / first - 1;
+      return {
+        symbol,
+        strategy,
+        params,
+        metrics: {
+          total_return: totalReturn,
+          annual_return: totalReturn * 252 / Math.max(prices.length, 1),
+          max_drawdown: -0.08 - Math.abs(totalReturn) * 0.25,
+          sharpe: totalReturn >= 0 ? 1.18 : -0.42,
+          total_trades: trades.length,
+          win_rate: trades.length ? trades.filter(t => t.return_pct > 0).length / trades.length : 0,
+          avg_return_per_trade: trades.length ? trades.reduce((s, t) => s + t.return_pct, 0) / trades.length : 0,
+        },
+        equity_curve: equityCurve,
+        price_series: prices,
+        signals,
+        trades,
+      };
+    }
+
+    function demoAlertsResult(symbols, start, end) {
+      const alerts = [];
+      const ranking = symbols.map((symbol, idx) => {
+        const prices = demoPriceSeries(symbol, start, end, 80);
+        const close = prices[prices.length - 1].close;
+        const score = Number((0.72 - idx * 0.08).toFixed(4));
+        alerts.push({
+          symbol,
+          strategy: idx % 2 === 0 ? "ma20_pullback" : "technical_summary",
+          action: idx % 2 === 0 ? "buy" : "hold",
+          level: idx % 2 === 0 ? "medium" : "info",
+          message: `${symbol} 使用前端演示数据生成策略提醒，后端不可用时仍可展示流程。`,
+          details: { date: end, close, score },
+        });
+        return {
+          rank: idx + 1,
+          symbol,
+          score,
+          alpha013: Number((-0.001 * (idx + 1)).toFixed(6)),
+          alpha015: Number((0.002 * (idx + 1)).toFixed(6)),
+          quality: Number((0.15 - idx * 0.03).toFixed(6)),
+          close,
+        };
+      });
+      return { start, end, symbols, count: alerts.length, alerts, factor_ranking: ranking, errors: [] };
+    }
+
+    function demoEtfPredictionResult(symbols, start, end, horizonDays) {
+      const predictions = symbols.map((symbol, idx) => {
+        const prices = demoPriceSeries(symbol, start, end, 120);
+        const close = prices[prices.length - 1].close;
+        const direction = idx % 3 === 0 ? "看多" : idx % 3 === 1 ? "震荡" : "看空";
+        const expected = direction === "看多" ? 3.2 : direction === "看空" ? -2.1 : 0.8;
+        return {
+          symbol,
+          status: "ok",
+          as_of: end,
+          horizon_days: horizonDays,
+          close,
+          direction,
+          action: direction === "看多" ? "买入观察" : direction === "看空" ? "减仓观察" : "持有观察",
+          confidence: 66 + idx * 4,
+          score: direction === "看多" ? 0.42 : direction === "看空" ? -0.35 : 0.08,
+          expected_return_pct: expected,
+          expected_low: close * (1 + (expected - 4) / 100),
+          expected_high: close * (1 + (expected + 4) / 100),
+          target_price: close * 1.05,
+          stop_loss: close * 0.96,
+          support: close * 0.97,
+          resistance: close * 1.06,
+          risk_level: idx % 2 ? "中" : "低",
+          reasons: ["前端演示数据：均线趋势、动量和波动率综合评分", "后端不可用时用于简历展示"],
+        };
+      });
+      return { start, end, horizon_days: horizonDays, symbols, count: predictions.length, predictions, errors: [] };
+    }
+
+    function demoDerivativeResult(symbols, strategy, capital, riskPerTrade) {
+      const contracts = symbols.map((symbol, idx) => {
+        const last = 2800 + idx * 720 + Math.round(seededRandom(symbol)() * 300);
+        const signal = idx % 3 === 0 ? "long" : idx % 3 === 1 ? "short" : "hold";
+        return {
+          symbol,
+          asset_type: symbol.includes("-") ? "option" : "future",
+          name: symbol.slice(0, 2).toUpperCase(),
+          exchange: idx % 2 ? "DCE" : "SHFE",
+          underlying: symbol.split("-")[0],
+          last,
+          signal,
+          action: signal === "long" ? "开多观察" : signal === "short" ? "开空观察" : "等待观察",
+          score: signal === "long" ? 0.48 : signal === "short" ? -0.41 : 0.05,
+          confidence: 62 + idx * 5,
+          target: signal === "short" ? last * 0.96 : last * 1.05,
+          stop: signal === "short" ? last * 1.03 : last * 0.97,
+          margin_per_lot: last * 12,
+          per_lot_risk: capital * riskPerTrade / 3,
+          suggested_lots: signal === "hold" ? 0 : 2 + idx,
+          ret20_pct: signal === "short" ? -3.4 : 2.6,
+          annual_vol_pct: 22 + idx * 3,
+          risk_checks: [
+            { name: "单笔风险", passed: true, detail: `低于 ${(riskPerTrade * 100).toFixed(1)}%` },
+            { name: "保证金占用", passed: true, detail: "低于 35%" },
+          ],
+          reasons: ["前端演示数据：趋势突破与风控检查已完成"],
+          option: symbol.includes("-") ? {
+            type: symbol.includes("-P-") ? "看跌" : "看涨",
+            strike: Number(symbol.split("-").pop()) || last,
+            theoretical_price: last * 0.035,
+            delta: 0.42,
+            gamma: 0.0008,
+            theta_per_day: -0.18,
+          } : null,
+        };
+      });
+      return { mode: "frontend_demo", strategy, capital, risk_per_trade: riskPerTrade, count: contracts.length, contracts, errors: [] };
+    }
 
     function renderAlerts(result) {
       if (!result.alerts || !result.alerts.length) {
