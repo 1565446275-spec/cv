@@ -1,0 +1,6 @@
+frontend.out.log
+frontend.err.log
+*.log
+backend-tunnel.*.log
+frontend-tunnel.*.log
+cloudflared.*.log

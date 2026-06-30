@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>量化交易软件演示</title>
+  <title>量化交易策略回测演示</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
@@ -29,34 +29,105 @@
     .nav b { font-size: 20px; }
     .nav span { color: #0f766e; }
     .nav div { display: flex; gap: 16px; flex-wrap: wrap; color: #657184; font-weight: 700; }
+
     .hero {
-      padding: 54px min(6vw, 72px) 30px;
-      display: grid;
-      grid-template-columns: minmax(0, .95fr) minmax(360px, 1.05fr);
-      gap: 30px;
+      padding: 40px min(6vw, 72px) 24px;
+      background: linear-gradient(135deg, rgba(15,118,110,.10), transparent 45%),
+                  linear-gradient(180deg, #ffffff, #f4f7fb);
+    }
+    .hero h1 { margin: 0 0 10px; font-size: clamp(28px, 5vw, 48px); }
+    .hero p { color: #5f6b7a; font-size: 15px; line-height: 1.7; margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .badges span { padding: 6px 10px; border-radius: 999px; background: #e8f7f3; color: #0f766e; font-weight: 700; font-size: 12px; }
+
+    .wrap { padding: 20px min(6vw, 72px) 40px; }
+
+    /* === 控制面板 === */
+    .controls {
+      background: #fff;
+      border: 1px solid #dfe6ef;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 14px 20px;
+    }
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ctrl-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #657184;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .ctrl-group input,
+    .ctrl-group select {
+      padding: 8px 12px;
+      border: 1px solid #d0d8e3;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fafbfc;
+      min-width: 100px;
+      transition: border-color .15s;
+    }
+    .ctrl-group input:focus,
+    .ctrl-group select:focus {
+      outline: none;
+      border-color: #0f766e;
+      background: #fff;
+    }
+    .ctrl-group input[type="number"] { width: 90px; }
+    .ctrl-group input[type="text"] { width: 120px; }
+    .param-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
       align-items: center;
-      background:
-        linear-gradient(135deg, rgba(15,118,110,.12), transparent 45%),
-        linear-gradient(180deg, #ffffff, #f4f7fb);
     }
-    h1 { margin: 0 0 16px; font-size: clamp(36px, 6vw, 64px); line-height: 1.04; letter-spacing: 0; }
-    .hero p { color: #5f6b7a; font-size: 17px; line-height: 1.8; margin: 0; max-width: 760px; }
-    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-    .badges span { padding: 7px 10px; border-radius: 999px; background: #e8f7f3; color: #0f766e; font-weight: 800; font-size: 13px; }
-    .terminal {
-      border: 1px solid #233044;
-      border-radius: 8px;
-      background: #111827;
-      color: #d1fae5;
-      overflow: hidden;
-      box-shadow: 0 22px 46px rgba(16,24,39,.22);
+    .param-row .ctrl-group label { font-size: 11px; }
+    .param-row .ctrl-group input { min-width: 60px; width: 70px; padding: 6px 8px; font-size: 13px; }
+
+    .btn-run {
+      padding: 9px 28px;
+      background: #0f766e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      white-space: nowrap;
+      margin-left: auto;
     }
-    .terminal-head { height: 36px; display: flex; gap: 8px; align-items: center; padding: 0 14px; background: #1f2937; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; }
-    .dot:nth-child(2) { background: #f59e0b; }
-    .dot:nth-child(3) { background: #22c55e; }
-    pre { margin: 0; padding: 18px; white-space: pre-wrap; line-height: 1.65; font-size: 13px; }
-    .wrap { padding: 32px min(6vw, 72px) 48px; }
+    .btn-run:hover { background: #0d635c; }
+    .btn-run:active { transform: scale(.97); }
+    .btn-run:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+    .btn-run.loading {
+      position: relative;
+      color: transparent;
+    }
+    .btn-run.loading::after {
+      content: "";
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 18px;
+      height: 18px;
+      margin: -9px 0 0 -9px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* === 指标卡片 === */
     .metrics {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -68,16 +139,17 @@
       border-radius: 8px;
       background: #fff;
       padding: 16px;
+      transition: box-shadow .2s;
     }
-    .metric span { color: #657184; font-size: 13px; }
-    .metric strong { display: block; margin-top: 8px; font-size: 26px; }
+    .metric:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .metric .label { color: #657184; font-size: 12px; font-weight: 600; }
+    .metric .value { display: block; margin-top: 6px; font-size: 26px; font-weight: 700; }
     .positive { color: #0f9f6e; }
     .negative { color: #dc2626; }
-    .dash {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(310px, .8fr);
-      gap: 18px;
-    }
+    .zero { color: #657184; }
+
+    /* === 图表区域 === */
+    .dash { display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; }
     .panel {
       border: 1px solid #dfe6ef;
       border-radius: 8px;
@@ -85,14 +157,227 @@
       padding: 18px;
       min-width: 0;
     }
-    .panel h2 { margin: 0 0 12px; font-size: 22px; }
-    .chart-box { height: 390px; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 11px 8px; border-bottom: 1px solid #edf1f6; text-align: left; }
-    th { color: #657184; font-size: 12px; }
-    .flow { display: grid; gap: 10px; }
-    .flow div { padding: 13px; border-radius: 8px; background: #f7fafc; border: 1px solid #e2e8f0; }
-    .flow b { display: block; margin-bottom: 5px; }
+    .panel h2 { margin: 0 0 10px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+    .panel h2 small { font-weight: 400; font-size: 12px; color: #94a3b8; }
+    .chart-box { height: 360px; position: relative; }
+    .chart-box canvas { width: 100% !important; height: 100% !important; }
+
+    /* === 交易明细表 === */
+    .trades-section { margin-top: 18px; }
+    .trades-section h2 { font-size: 17px; margin: 0 0 10px; }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      background: #fff;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #edf1f6; text-align: left; white-space: nowrap; }
+    th { color: #657184; font-size: 11px; font-weight: 700; background: #f9fafb; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tag-buy { background: #d1fae5; color: #065f46; }
+    .tag-sell { background: #fee2e2; color: #991b1b; }
+
+    .watch-panel {
+      margin: 18px 0;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      background: #fff;
+      padding: 18px;
+    }
+    .watch-panel h2 { margin: 0 0 12px; font-size: 17px; }
+    .watch-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) 160px 160px 150px;
+      gap: 12px;
+      align-items: end;
+    }
+    .watch-grid textarea,
+    .watch-grid input {
+      width: 100%;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .watch-grid textarea { min-height: 72px; resize: vertical; }
+    .watch-grid label {
+      display: block;
+      margin-bottom: 6px;
+      color: #657184;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .alert-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .alert-card {
+      border: 1px solid #edf1f6;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f9fafb;
+    }
+    .alert-card.buy { border-color: #bbf7d0; background: #f0fdf4; }
+    .alert-card.sell { border-color: #fecaca; background: #fef2f2; }
+    .alert-card.observe { border-color: #fde68a; background: #fffbeb; }
+    .alert-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+    .alert-card p { margin: 0; color: #4b5563; line-height: 1.6; font-size: 13px; }
+    .factor-rank {
+      margin-top: 14px;
+      overflow-x: auto;
+      border: 1px solid #edf1f6;
+      border-radius: 8px;
+    }
+    .etf-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 150px 150px 130px 140px;
+      gap: 12px;
+      align-items: end;
+    }
+    .etf-grid textarea,
+    .etf-grid input,
+    .etf-grid select {
+      width: 100%;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .etf-grid textarea { min-height: 72px; resize: vertical; }
+    .etf-grid label {
+      display: block;
+      margin-bottom: 6px;
+      color: #657184;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .prediction-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .prediction-card {
+      border: 1px solid #edf1f6;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f9fafb;
+    }
+    .prediction-card.bullish { border-color: #bbf7d0; background: #f0fdf4; }
+    .prediction-card.bearish { border-color: #fecaca; background: #fef2f2; }
+    .prediction-card.neutral { border-color: #bfdbfe; background: #eff6ff; }
+    .prediction-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+    .prediction-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .prediction-metrics div {
+      border: 1px solid rgba(148,163,184,.35);
+      border-radius: 6px;
+      background: rgba(255,255,255,.65);
+      padding: 8px;
+    }
+    .prediction-metrics small {
+      display: block;
+      color: #64748b;
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+    .prediction-metrics b { font-size: 14px; }
+    .reason-list { margin: 0; padding-left: 18px; color: #4b5563; line-height: 1.6; font-size: 13px; }
+    .derivative-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 160px 140px 130px 120px;
+      gap: 12px;
+      align-items: end;
+    }
+    .derivative-grid textarea,
+    .derivative-grid input,
+    .derivative-grid select {
+      width: 100%;
+      border: 1px solid #dfe6ef;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .derivative-grid textarea { min-height: 72px; resize: vertical; }
+    .derivative-grid label {
+      display: block;
+      margin-bottom: 6px;
+      color: #657184;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .ctp-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      color: #475569;
+      font-size: 12px;
+    }
+    .ctp-status span {
+      border: 1px solid #dfe6ef;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #f8fafc;
+      font-weight: 700;
+    }
+    .risk-checks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .risk-checks div {
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(148,163,184,.35);
+    }
+    .risk-checks .pass { color: #047857; }
+    .risk-checks .fail { color: #b91c1c; }
+
+    /* === 信号标记 === */
+    .strategy-desc {
+      font-size: 13px;
+      color: #5f6b7a;
+      line-height: 1.6;
+      padding: 14px;
+      background: #f9fafb;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
     .note {
       margin-top: 18px;
       padding: 14px;
@@ -101,19 +386,59 @@
       background: #fff7e6;
       color: #735018;
       line-height: 1.7;
+      font-size: 14px;
     }
-    @media (max-width: 980px) {
-      .hero, .dash { grid-template-columns: 1fr; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #94a3b8;
+      text-align: center;
+      gap: 8px;
+    }
+    .empty-state i { font-size: 48px; }
+    .empty-state p { margin: 0; font-size: 14px; }
+
+    /* === 右侧面板信号流 === */
+    .flow { display: grid; gap: 8px; max-height: 340px; overflow-y: auto; }
+    .flow::-webkit-scrollbar { width: 4px; }
+    .flow::-webkit-scrollbar-thumb { background: #d0d8e3; border-radius: 4px; }
+    .flow-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #fafbfc;
+      font-size: 13px;
+    }
+    .flow-item .fi-action { font-weight: 700; }
+    .flow-item .fi-price { color: #5f6b7a; }
+    .flow-item .fi-reason { display: block; color: #94a3b8; font-size: 11px; margin-top: 3px; }
+
+    @media (max-width: 1024px) {
+      .dash { grid-template-columns: 1fr; }
       .metrics { grid-template-columns: repeat(2, 1fr); }
+      .controls { flex-direction: column; align-items: stretch; }
+      .btn-run { margin-left: 0; }
+      .param-row { flex-wrap: wrap; }
+      .watch-grid,
+      .etf-grid,
+      .derivative-grid { grid-template-columns: 1fr; }
+      .alert-list,
+      .prediction-list { grid-template-columns: 1fr; }
     }
     @media (max-width: 560px) {
       .nav { align-items: flex-start; flex-direction: column; gap: 10px; }
       .metrics { grid-template-columns: 1fr; }
-      .chart-box { height: 320px; }
+      .chart-box { height: 280px; }
+      .controls { padding: 16px; }
     }
   </style>
 </head>
 <body>
+
   <header class="nav">
     <a href="projects.html"><b>Quant<span> Framework</span></b></a>
     <div><a href="projects.html">项目总览</a><a href="efinance-demo.html">小程序演示</a><a href="index.html">简历主页</a></div>
@@ -121,112 +446,1078 @@
 
   <section class="hero">
     <div>
-      <h1>量化交易与策略回测软件</h1>
-      <p>项目基于 Python 封装行情数据、技术指标、交易策略、回测引擎、信号监控和结果可视化。演示页用静态数据复现软件输出，方便面试官快速理解框架能力。</p>
-      <div class="badges"><span>Python</span><span>Moving Average</span><span>RSI</span><span>MACD</span><span>Backtest</span><span>Risk Control</span></div>
-    </div>
-    <div class="terminal">
-      <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-      <pre>BacktestEngine(initial_cash=100000)
-data = add_technical_indicators(generate_simulated_data())
-strategies = [MA(5,20), MA(10,30), RSI(14), MACD()]
-results = engine.run_multiple(data, strategies)
-
-Best Strategy: MA Cross (10,30)
-Total Return: +18.6%
-Max Drawdown: -7.8%
-Sharpe Ratio: 1.34</pre>
+      <h1>量化交易策略回测</h1>
+      <p>接入真实行情数据（腾讯财经 / 深交所 / CTP / OpenBB / yfinance），在线选择策略并运行回测，实时查看净值曲线、交易信号、ETF 趋势预测、期货期权扫描和绩效指标。</p>
+      <div class="badges"><span>Python</span><span>FastAPI</span><span>CTP</span><span>Futures</span><span>Options Greeks</span><span>ETF Forecast</span><span>RSI</span><span>MACD</span></div>
     </div>
   </section>
 
   <main class="wrap">
-    <section class="metrics">
-      <div class="metric"><span>总收益率</span><strong class="positive">+18.6%</strong></div>
-      <div class="metric"><span>年化收益</span><strong class="positive">+9.1%</strong></div>
-      <div class="metric"><span>最大回撤</span><strong class="negative">-7.8%</strong></div>
-      <div class="metric"><span>夏普比率</span><strong>1.34</strong></div>
+
+    <!-- ===== 控制面板 ===== -->
+    <section class="controls" id="controls">
+      <div class="ctrl-group">
+        <label>股票代码</label>
+        <input type="text" id="inputSymbol" value="000001.SZ" placeholder="如 000001.SZ / 600519.SS">
+      </div>
+      <div class="ctrl-group">
+        <label>起始日期</label>
+        <input type="date" id="inputStart">
+      </div>
+      <div class="ctrl-group">
+        <label>结束日期</label>
+        <input type="date" id="inputEnd">
+      </div>
+      <div class="ctrl-group">
+        <label>策略</label>
+        <select id="selectStrategy">
+          <option value="ma_cross">双均线交叉 (MA Cross)</option>
+          <option value="rsi_reversal">RSI 超卖超买反转</option>
+          <option value="macd_cross">MACD 金叉死叉</option>
+          <option value="bollinger_reversion">布林带均值回归</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>初始资金</label>
+        <input type="number" id="inputCash" value="100000" min="1000" step="10000">
+      </div>
+      <button class="btn-run" id="btnRun">运行回测</button>
+
+      <!-- 动态策略参数 -->
+      <div style="width:100%; border-top:1px solid #edf1f6; padding-top:12px; margin-top:2px;">
+        <div style="font-size:11px; font-weight:700; color:#657184; margin-bottom:6px;">策略参数</div>
+        <div class="param-row" id="paramRow"></div>
+      </div>
     </section>
 
+    <!-- ===== 指标卡片 ===== -->
+    <section class="watch-panel">
+      <h2>自选股策略提醒</h2>
+      <div class="watch-grid">
+        <div>
+          <label>自选股代码（逗号或换行分隔）</label>
+          <textarea id="watchSymbols">000001.SZ, 600519.SS, 300497, 600720</textarea>
+        </div>
+        <div>
+          <label>扫描起始日</label>
+          <input type="date" id="watchStart">
+        </div>
+        <div>
+          <label>扫描结束日</label>
+          <input type="date" id="watchEnd">
+        </div>
+        <button class="btn-run" id="btnScanAlerts">扫描提醒</button>
+      </div>
+      <div class="strategy-desc" style="margin-top:12px;">
+        扫描条件：1. 零轴下方 MACD 金叉买入观察；2. 回踩 20 日均线买入观察，跌破 20 日线卖出/减仓；3. 多因子横截面排名，Alpha013、Alpha015、质量代理因子权重为 0.3 / 0.4 / 0.3。
+      </div>
+      <div id="alertList" class="alert-list">
+        <div class="alert-card"><p>暂无提醒。填写自选股后点击“扫描提醒”。</p></div>
+      </div>
+      <div id="factorRank" class="factor-rank" style="display:none;"></div>
+    </section>
+
+    <section class="watch-panel">
+      <h2>ETF 趋势预测</h2>
+      <div class="etf-grid">
+        <div>
+          <label>ETF 代码（逗号或换行分隔）</label>
+          <textarea id="etfSymbols">510300, 510500, 159915, 159919</textarea>
+        </div>
+        <div>
+          <label>预测起始日</label>
+          <input type="date" id="etfStart">
+        </div>
+        <div>
+          <label>预测结束日</label>
+          <input type="date" id="etfEnd">
+        </div>
+        <div>
+          <label>预测周期</label>
+          <select id="etfHorizon">
+            <option value="5">5 个交易日</option>
+            <option value="10" selected>10 个交易日</option>
+            <option value="20">20 个交易日</option>
+            <option value="30">30 个交易日</option>
+          </select>
+        </div>
+        <button class="btn-run" id="btnPredictEtf">预测 ETF</button>
+      </div>
+      <div class="strategy-desc" style="margin-top:12px;">
+        模型逻辑：综合均线趋势、20/60 日动量、MACD 柱体、RSI、成交量确认、年化波动率和 60 日最大回撤，输出短周期方向、置信度、预测价格区间、目标位和止损位。深交所 ETF 使用 6 位代码，例如 159915、159919。
+      </div>
+      <div id="etfPredictionList" class="prediction-list">
+        <div class="prediction-card"><p>暂无预测。填写 ETF 后点击“预测 ETF”。</p></div>
+      </div>
+    </section>
+
+    <section class="watch-panel">
+      <h2>期货期权量化（CTP）</h2>
+      <div class="derivative-grid">
+        <div>
+          <label>合约代码（逗号或换行分隔）</label>
+          <textarea id="derivativeSymbols">rb2605, au2604, IF2606, m2609-C-3200</textarea>
+        </div>
+        <div>
+          <label>策略模型</label>
+          <select id="derivativeStrategy">
+            <option value="trend_breakout" selected>趋势突破</option>
+            <option value="mean_reversion">均值回归</option>
+            <option value="vol_breakout">波动突破</option>
+          </select>
+        </div>
+        <div>
+          <label>账户权益</label>
+          <input type="number" id="derivativeCapital" value="500000" min="10000" step="10000">
+        </div>
+        <div>
+          <label>单笔风险</label>
+          <select id="derivativeRisk">
+            <option value="0.005">0.5%</option>
+            <option value="0.01" selected>1.0%</option>
+            <option value="0.02">2.0%</option>
+          </select>
+        </div>
+        <button class="btn-run" id="btnScanDerivatives">扫描合约</button>
+      </div>
+      <div class="strategy-desc" style="margin-top:12px;">
+        接口边界：后端按 ctp_python / XM_CTP 的 CtpConfig、CtpClient 方式预留真实 CTP 接入，当前未配置柜台账号时自动使用仿真行情。扫描输出期货趋势信号、期权理论价与 Greeks、建议手数、保证金占用和风控检查。
+      </div>
+      <div id="ctpStatus" class="ctp-status">
+        <span>CTP 状态：检测中</span>
+      </div>
+      <div id="derivativeList" class="prediction-list">
+        <div class="prediction-card"><p>暂无扫描结果。填写合约后点击“扫描合约”。</p></div>
+      </div>
+    </section>
+
+    <section class="metrics" id="metricsSection">
+      <div class="metric"><div class="label">总收益率</div><span class="value zero" id="mTotalReturn">--</span></div>
+      <div class="metric"><div class="label">年化收益率</div><span class="value zero" id="mAnnualReturn">--</span></div>
+      <div class="metric"><div class="label">最大回撤</div><span class="value zero" id="mMaxDrawdown">--</span></div>
+      <div class="metric"><div class="label">夏普比率</div><span class="value zero" id="mSharpe">--</span></div>
+    </section>
+
+    <!-- ===== 图表区域 ===== -->
     <section class="dash">
       <div class="panel">
-        <h2>策略净值曲线</h2>
-        <div class="chart-box"><canvas id="equityChart"></canvas></div>
+        <h2>策略净值曲线 <small id="eqSubtitle">等待运行…</small></h2>
+        <div class="chart-box">
+          <canvas id="equityChart"></canvas>
+        </div>
       </div>
       <div class="panel">
-        <h2>系统模块</h2>
-        <div class="flow">
-          <div><b>数据层</b><span>CSV、A 股接口、模拟行情、技术指标扩展。</span></div>
-          <div><b>策略层</b><span>双均线交叉、RSI 超买超卖、MACD 背离。</span></div>
-          <div><b>回测层</b><span>手续费、滑点、交易明细、净值曲线。</span></div>
-          <div><b>风控层</b><span>最大回撤、胜率、盈亏比、支撑压力监控。</span></div>
+        <h2>交易信号</h2>
+        <div class="strategy-desc" id="strategyDesc">选择策略并点击"运行回测"查看交易信号。</div>
+        <div class="flow" id="signalFlow">
+          <div style="color:#94a3b8; text-align:center; padding:40px 0;">暂无信号数据</div>
         </div>
       </div>
     </section>
 
-    <section class="dash" style="margin-top:18px">
+    <section class="dash" style="margin-top:18px; grid-template-columns:1.7fr 1fr;">
       <div class="panel">
-        <h2>策略对比</h2>
-        <table>
-          <thead><tr><th>策略</th><th>收益率</th><th>回撤</th><th>胜率</th><th>交易次数</th></tr></thead>
-          <tbody>
-            <tr><td>MA Cross (5,20)</td><td class="positive">+12.4%</td><td class="negative">-8.9%</td><td>58%</td><td>16</td></tr>
-            <tr><td>MA Cross (10,30)</td><td class="positive">+18.6%</td><td class="negative">-7.8%</td><td>63%</td><td>11</td></tr>
-            <tr><td>RSI Strategy</td><td class="positive">+6.2%</td><td class="negative">-5.4%</td><td>55%</td><td>9</td></tr>
-            <tr><td>MACD Divergence</td><td class="positive">+9.8%</td><td class="negative">-10.1%</td><td>50%</td><td>8</td></tr>
-          </tbody>
-        </table>
+        <h2>收盘价与买卖信号</h2>
+        <div class="chart-box">
+          <canvas id="priceChart"></canvas>
+        </div>
       </div>
       <div class="panel">
-        <h2>简历可写亮点</h2>
+        <h2>回测概要</h2>
+        <div id="summaryPanel" style="font-size:14px; line-height:1.8; color:#5f6b7a;">
+          <div style="text-align:center; padding:40px 0; color:#94a3b8;">运行回测后将显示概要信息</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 交易明细表 ===== -->
+    <section class="trades-section">
+      <h2>交易明细 <small id="tradeCount" style="font-weight:400;color:#94a3b8;"></small></h2>
+      <div class="table-wrap">
         <table>
-          <tbody>
-            <tr><td>搭建模块化量化交易框架，覆盖数据加载、指标计算、信号生成、回测评估和可视化输出。</td></tr>
-            <tr><td>实现多策略对比，输出收益率、夏普比率、最大回撤、胜率、盈亏比和交易明细。</td></tr>
-            <tr><td>引入手续费、滑点和支撑压力位监控，提高策略验证的真实度和风险意识。</td></tr>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>买入日期</th>
+              <th>卖出日期</th>
+              <th>买入价格</th>
+              <th>卖出价格</th>
+              <th>收益率</th>
+            </tr>
+          </thead>
+          <tbody id="tradeBody">
+            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:30px;">暂无交易数据</td></tr>
           </tbody>
         </table>
       </div>
     </section>
-    <div class="note">说明：本页用于项目展示，图表为根据本地框架能力整理的演示数据；实际交易需连接真实行情、账户系统并完成合规审核。</div>
+
+    <div class="note">
+      <strong>⚠️ 风险提示：</strong>本系统仅供学习和面试展示用途。
+      回测结果基于历史行情数据，不代表未来表现。期货期权存在杠杆、保证金、强平、流动性和波动率风险。
+      不构成任何投资建议。数据来源：腾讯财经 / 深交所 / CTP 适配层 / OpenBB SDK / yfinance。
+    </div>
   </main>
 
   <script>
-    const labels = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-    const ctx = document.getElementById("equityChart");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "MA Cross (10,30)",
-            data: [100, 102, 101, 106, 109, 107, 112, 116, 114, 119, 121, 118.6],
-            borderColor: "#0f766e",
-            backgroundColor: "rgba(15,118,110,.12)",
-            fill: true,
-            tension: .35,
-            pointRadius: 3
-          },
-          {
-            label: "基准",
-            data: [100, 99, 101, 103, 102, 104, 106, 105, 108, 109, 111, 110],
-            borderColor: "#94a3b8",
-            borderDash: [6, 6],
-            tension: .35,
-            pointRadius: 2
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: "bottom" } },
-        scales: {
-          y: { ticks: { callback: value => value + "%" }, grid: { color: "#edf2f7" } },
-          x: { grid: { display: false } }
-        }
+    // =====================================================================
+    // 配置常量
+    // =====================================================================
+    // API 地址优先级：
+    // 1. URL 参数 ?api=http://后端地址
+    // 2. localStorage.quantApiBase
+    // 3. 本地/局域网访问时自动使用当前主机的 8000 端口
+    // 4. GitHub Pages 等静态部署时必须配置公网后端地址
+    const API_BASE = (() => {
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = params.get("api");
+      if (fromQuery) {
+        localStorage.setItem("quantApiBase", fromQuery.replace(/\/$/, ""));
+        return fromQuery.replace(/\/$/, "");
       }
+      const saved = localStorage.getItem("quantApiBase");
+      if (saved) return saved.replace(/\/$/, "");
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+        return `${window.location.protocol}//${host}:8000`;
+      }
+      return "";
+    })();
+
+    // =====================================================================
+    // 策略参数定义
+    // =====================================================================
+    const STRATEGY_PARAMS = {
+      ma_cross: [
+        { key: "short_window", label: "短均线", default: 5, min: 2, max: 100 },
+        { key: "long_window",  label: "长均线", default: 20, min: 5, max: 500 }
+      ],
+      rsi_reversal: [
+        { key: "rsi_period",          label: "RSI 周期",   default: 14, min: 5, max: 50 },
+        { key: "oversold_threshold",  label: "超卖阈值",   default: 30, min: 5, max: 49 },
+        { key: "overbought_threshold",label: "超买阈值",   default: 70, min: 51, max: 95 }
+      ],
+      macd_cross: [
+        { key: "fast_period",   label: "快线周期",   default: 12, min: 2, max: 50 },
+        { key: "slow_period",   label: "慢线周期",   default: 26, min: 5, max: 200 },
+        { key: "signal_period", label: "信号线周期", default: 9,  min: 2, max: 50 }
+      ],
+      bollinger_reversion: [
+        { key: "period",  label: "布林周期",   default: 20, min: 5, max: 100 },
+        { key: "std_dev", label: "标准差倍数", default: 2.0, min: 1.0, max: 4.0, step: 0.1 }
+      ]
+    };
+
+    // =====================================================================
+    // 状态
+    // =====================================================================
+    let equityChartInstance = null;
+    let priceChartInstance = null;
+    let currentResult = null;
+
+    // =====================================================================
+    // DOM 引用
+    // =====================================================================
+    const $ = id => document.getElementById(id);
+    const inputSymbol    = $("inputSymbol");
+    const inputStart     = $("inputStart");
+    const inputEnd       = $("inputEnd");
+    const selectStrategy = $("selectStrategy");
+    const inputCash      = $("inputCash");
+    const paramRow       = $("paramRow");
+    const btnRun         = $("btnRun");
+    const tradeBody      = $("tradeBody");
+    const tradeCount     = $("tradeCount");
+    const signalFlow     = $("signalFlow");
+    const strategyDesc   = $("strategyDesc");
+    const eqSubtitle     = $("eqSubtitle");
+    const summaryPanel   = $("summaryPanel");
+    const watchSymbols   = $("watchSymbols");
+    const watchStart     = $("watchStart");
+    const watchEnd       = $("watchEnd");
+    const btnScanAlerts  = $("btnScanAlerts");
+    const alertList      = $("alertList");
+    const factorRank     = $("factorRank");
+    const etfSymbols     = $("etfSymbols");
+    const etfStart       = $("etfStart");
+    const etfEnd         = $("etfEnd");
+    const etfHorizon     = $("etfHorizon");
+    const btnPredictEtf  = $("btnPredictEtf");
+    const etfPredictionList = $("etfPredictionList");
+    const derivativeSymbols = $("derivativeSymbols");
+    const derivativeStrategy = $("derivativeStrategy");
+    const derivativeCapital = $("derivativeCapital");
+    const derivativeRisk = $("derivativeRisk");
+    const btnScanDerivatives = $("btnScanDerivatives");
+    const ctpStatus = $("ctpStatus");
+    const derivativeList = $("derivativeList");
+
+    // =====================================================================
+    // 初始化日期
+    // =====================================================================
+    (function initDates() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      inputEnd.value = `${y}-${m}-${d}`;
+      watchEnd.value = inputEnd.value;
+      etfEnd.value = inputEnd.value;
+      // 默认过去一年
+      const start = new Date(now);
+      start.setFullYear(y - 1);
+      inputStart.value = start.toISOString().slice(0, 10);
+      watchStart.value = inputStart.value;
+      etfStart.value = inputStart.value;
+    })();
+
+    // =====================================================================
+    // 策略切换 → 更新参数控件
+    // =====================================================================
+    function renderParams() {
+      const strategy = selectStrategy.value;
+      const params = STRATEGY_PARAMS[strategy] || [];
+      paramRow.innerHTML = params.map(p => {
+        const step = p.step !== undefined ? p.step : 1;
+        return `<div class="ctrl-group">
+          <label>${p.label}</label>
+          <input type="number" class="strategy-param" data-key="${p.key}"
+                 value="${p.default}" min="${p.min}" max="${p.max}" step="${step}">
+        </div>`;
+      }).join("");
+    }
+    selectStrategy.addEventListener("change", renderParams);
+    renderParams();
+
+    // =====================================================================
+    // 获取策略参数值
+    // =====================================================================
+    function getStrategyParams() {
+      const params = {};
+      document.querySelectorAll(".strategy-param").forEach(el => {
+        params[el.dataset.key] = parseFloat(el.value);
+      });
+      return params;
+    }
+
+    // =====================================================================
+    // 运行回测
+    // =====================================================================
+    async function runBacktest() {
+      const symbol    = inputSymbol.value.trim().toUpperCase() || "000001.SZ";
+      const start     = inputStart.value;
+      const end       = inputEnd.value;
+      const strategy  = selectStrategy.value;
+      const cash      = parseFloat(inputCash.value) || 100000;
+      const params    = getStrategyParams();
+
+      // 简单校验
+      if (!start || !end) { alert("请选择起止日期"); return; }
+      if (start >= end)   { alert("结束日期必须晚于起始日期"); return; }
+
+      btnRun.disabled = true;
+      btnRun.classList.add("loading");
+      btnRun.textContent = "运行中…";
+
+      // 清空旧状态
+      setMetrics(null);
+      signalFlow.innerHTML = `<div style="color:#94a3b8;text-align:center;padding:20px 0;">正在计算…</div>`;
+      tradeBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">加载中…</td></tr>`;
+      tradeCount.textContent = "";
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/backtest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbol, start, end, strategy,
+            initial_cash: cash,
+            commission: 0.0003,
+            slippage: 0.0001,
+            params
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+        const result = await resp.json();
+        currentResult = result;
+        renderResults(result);
+      } catch (err) {
+        alert("回测请求失败: " + err.message);
+        signalFlow.innerHTML = `<div style="color:#dc2626;text-align:center;padding:20px 0;">请求失败: ${err.message}</div>`;
+        eqSubtitle.textContent = "请求失败";
+      } finally {
+        btnRun.disabled = false;
+        btnRun.classList.remove("loading");
+        btnRun.textContent = "运行回测";
+      }
+    }
+
+    btnRun.addEventListener("click", runBacktest);
+
+    async function scanAlerts() {
+      const symbols = watchSymbols.value
+        .split(/[\s,，;；]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+      const start = watchStart.value;
+      const end = watchEnd.value;
+
+      if (!symbols.length) { alert("请至少输入一个自选股代码"); return; }
+      if (!start || !end) { alert("请选择扫描起止日期"); return; }
+      if (start >= end) { alert("扫描结束日期必须晚于起始日期"); return; }
+
+      btnScanAlerts.disabled = true;
+      btnScanAlerts.classList.add("loading");
+      btnScanAlerts.textContent = "扫描中";
+      alertList.innerHTML = `<div class="alert-card"><p>正在扫描自选股，请稍候...</p></div>`;
+      factorRank.style.display = "none";
+      factorRank.innerHTML = "";
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/alerts/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbols,
+            start,
+            end,
+            ma20_tolerance: 0.015,
+            factor_top_n: Math.min(5, symbols.length),
+            factor_weights: { alpha013: 0.3, alpha015: 0.4, quality: 0.3 }
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+        const result = await resp.json();
+        renderAlerts(result);
+      } catch (err) {
+        alertList.innerHTML = `<div class="alert-card sell"><p>扫描失败：${escapeHtml(err.message)}</p></div>`;
+      } finally {
+        btnScanAlerts.disabled = false;
+        btnScanAlerts.classList.remove("loading");
+        btnScanAlerts.textContent = "扫描提醒";
+      }
+    }
+
+    btnScanAlerts.addEventListener("click", scanAlerts);
+
+    async function predictEtfs() {
+      const symbols = etfSymbols.value
+        .split(/[\s,，;；]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+      const start = etfStart.value;
+      const end = etfEnd.value;
+      const horizonDays = parseInt(etfHorizon.value, 10) || 10;
+
+      if (!symbols.length) { alert("请至少输入一个 ETF 代码"); return; }
+      if (!start || !end) { alert("请选择预测起止日期"); return; }
+      if (start >= end) { alert("预测结束日期必须晚于起始日期"); return; }
+
+      btnPredictEtf.disabled = true;
+      btnPredictEtf.classList.add("loading");
+      btnPredictEtf.textContent = "预测中";
+      etfPredictionList.innerHTML = `<div class="prediction-card"><p>正在计算 ETF 预测，请稍候...</p></div>`;
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/etf/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbols,
+            start,
+            end,
+            horizon_days: horizonDays
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+        const result = await resp.json();
+        renderEtfPredictions(result);
+      } catch (err) {
+        etfPredictionList.innerHTML = `<div class="prediction-card bearish"><p>预测失败：${escapeHtml(err.message)}</p></div>`;
+      } finally {
+        btnPredictEtf.disabled = false;
+        btnPredictEtf.classList.remove("loading");
+        btnPredictEtf.textContent = "预测 ETF";
+      }
+    }
+
+    btnPredictEtf.addEventListener("click", predictEtfs);
+
+    async function loadCtpStatus() {
+      try {
+        const resp = await fetch(`${API_BASE}/api/ctp/status`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const status = await resp.json();
+        const modeText = status.mode === "live_ready" ? "真实 CTP 就绪" : "仿真模式";
+        ctpStatus.innerHTML = `
+          <span>CTP 状态：${escapeHtml(modeText)}</span>
+          <span>模块：${status.python_module_ready ? "已安装" : "未安装"}</span>
+          <span>配置：${status.config_ready ? "已配置" : "未配置"}</span>
+          <span>${escapeHtml(status.message)}</span>
+        `;
+      } catch (err) {
+        ctpStatus.innerHTML = `<span>CTP 状态检测失败：${escapeHtml(err.message)}</span>`;
+      }
+    }
+
+    async function scanDerivatives() {
+      const symbols = derivativeSymbols.value
+        .split(/[\s,，;；]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const strategy = derivativeStrategy.value;
+      const capital = parseFloat(derivativeCapital.value) || 500000;
+      const riskPerTrade = parseFloat(derivativeRisk.value) || 0.01;
+
+      if (!symbols.length) { alert("请至少输入一个期货或期权合约"); return; }
+
+      btnScanDerivatives.disabled = true;
+      btnScanDerivatives.classList.add("loading");
+      btnScanDerivatives.textContent = "扫描中";
+      derivativeList.innerHTML = `<div class="prediction-card"><p>正在扫描期货期权合约，请稍候...</p></div>`;
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/derivatives/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbols,
+            strategy,
+            capital,
+            risk_per_trade: riskPerTrade,
+            days: 120
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+        const result = await resp.json();
+        renderDerivatives(result);
+      } catch (err) {
+        derivativeList.innerHTML = `<div class="prediction-card bearish"><p>扫描失败：${escapeHtml(err.message)}</p></div>`;
+      } finally {
+        btnScanDerivatives.disabled = false;
+        btnScanDerivatives.classList.remove("loading");
+        btnScanDerivatives.textContent = "扫描合约";
+      }
+    }
+
+    btnScanDerivatives.addEventListener("click", scanDerivatives);
+    loadCtpStatus();
+
+    function renderAlerts(result) {
+      if (!result.alerts || !result.alerts.length) {
+        alertList.innerHTML = `<div class="alert-card"><p>本次扫描没有触发提醒。</p></div>`;
+      } else {
+        alertList.innerHTML = result.alerts.map(item => {
+          const actionText = { buy: "买入观察", sell: "卖出/减仓", observe: "观察", hold: "未触发" }[item.action] || item.action;
+          const cls = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : item.action === "observe" ? "observe" : "";
+          const detail = item.details || {};
+          const detailText = Object.entries(detail)
+            .filter(([k]) => !["symbol", "rank"].includes(k))
+            .slice(0, 5)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(" | ");
+          return `<div class="alert-card ${cls}">
+            <div class="alert-head"><span>${escapeHtml(item.symbol)}</span><span>${actionText}</span></div>
+            <p>${escapeHtml(item.message)}</p>
+            ${detailText ? `<p style="margin-top:6px;color:#64748b;font-size:12px;">${escapeHtml(detailText)}</p>` : ""}
+          </div>`;
+        }).join("");
+      }
+
+      if (result.errors && result.errors.length) {
+        alertList.innerHTML += result.errors.map(err =>
+          `<div class="alert-card sell"><div class="alert-head"><span>${escapeHtml(err.symbol)}</span><span>取数失败</span></div><p>${escapeHtml(err.error)}</p></div>`
+        ).join("");
+      }
+
+      renderFactorRank(result.factor_ranking || []);
+    }
+
+    function renderDerivatives(result) {
+      const cards = [];
+
+      (result.contracts || []).forEach(item => {
+        const cls = item.signal === "long" ? "bullish" : item.signal === "short" ? "bearish" : "neutral";
+        const signalText = { long: "开多观察", short: "开空观察", hold: "等待观察", avoid: "规避" }[item.signal] || item.action;
+        const option = item.option ? `
+          <p style="margin:6px 0;color:#64748b;font-size:12px;">
+            期权：${escapeHtml(item.option.type)} | 行权价 ${formatPrice(item.option.strike)} |
+            理论价 ${formatPrice(item.option.theoretical_price)} |
+            Delta ${Number(item.option.delta).toFixed(4)} |
+            Gamma ${Number(item.option.gamma).toFixed(6)} |
+            Theta/日 ${Number(item.option.theta_per_day).toFixed(4)}
+          </p>` : "";
+        const checks = (item.risk_checks || []).map(check => `
+          <div class="${check.passed ? "pass" : "fail"}">
+            ${check.passed ? "通过" : "拦截"} · ${escapeHtml(check.name)}<br>
+            <span style="color:#64748b;">${escapeHtml(check.detail)}</span>
+          </div>`).join("");
+        const reasons = (item.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join("");
+
+        cards.push(`<div class="prediction-card ${cls}">
+          <div class="prediction-head">
+            <span>${escapeHtml(item.symbol)} <small style="color:#64748b;">${escapeHtml(item.exchange)} · ${escapeHtml(item.name)}</small></span>
+            <span>${escapeHtml(signalText)}</span>
+          </div>
+          <div class="prediction-metrics">
+            <div><small>最新价</small><b>${formatPrice(item.last)}</b></div>
+            <div><small>置信度</small><b>${item.confidence}%</b></div>
+            <div><small>策略得分</small><b>${Number(item.score).toFixed(4)}</b></div>
+            <div><small>目标位</small><b>${formatPrice(item.target)}</b></div>
+            <div><small>止损位</small><b>${formatPrice(item.stop)}</b></div>
+            <div><small>建议手数</small><b>${item.suggested_lots}</b></div>
+          </div>
+          <p style="margin:0;color:#64748b;font-size:12px;">
+            保证金/手：${formatMoney(item.margin_per_lot)} | 单手风险：${formatMoney(item.per_lot_risk)} |
+            20日收益：${formatSignedPct(item.ret20_pct)} | 年化波动：${Number(item.annual_vol_pct).toFixed(2)}%
+          </p>
+          ${option}
+          ${checks ? `<div class="risk-checks">${checks}</div>` : ""}
+          ${reasons ? `<ul class="reason-list" style="margin-top:8px;">${reasons}</ul>` : ""}
+        </div>`);
+      });
+
+      (result.errors || []).forEach(err => {
+        cards.push(`<div class="prediction-card bearish">
+          <div class="prediction-head"><span>${escapeHtml(err.symbol)}</span><span>扫描失败</span></div>
+          <p>${escapeHtml(err.error)}</p>
+        </div>`);
+      });
+
+      derivativeList.innerHTML = cards.length
+        ? cards.join("")
+        : `<div class="prediction-card"><p>本次没有生成期货期权扫描结果。</p></div>`;
+    }
+
+    function renderEtfPredictions(result) {
+      const cards = [];
+
+      (result.predictions || []).forEach(item => {
+        if (item.status !== "ok") {
+          cards.push(`<div class="prediction-card neutral">
+            <div class="prediction-head"><span>${escapeHtml(item.symbol)}</span><span>数据不足</span></div>
+            <p>${escapeHtml(item.message || "有效行情不足，暂不能预测。")}</p>
+          </div>`);
+          return;
+        }
+
+        const cls = item.direction === "看多" ? "bullish" : item.direction === "看空" ? "bearish" : "neutral";
+        const confidenceClass = item.direction === "看多" ? "positive" : item.direction === "看空" ? "negative" : "zero";
+        const reasons = (item.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join("");
+        cards.push(`<div class="prediction-card ${cls}">
+          <div class="prediction-head">
+            <span>${escapeHtml(item.symbol)} <small style="color:#64748b;">${escapeHtml(item.as_of)}</small></span>
+            <span>${escapeHtml(item.direction)} · ${escapeHtml(item.action)}</span>
+          </div>
+          <div class="prediction-metrics">
+            <div><small>最新价</small><b>${formatPrice(item.close)}</b></div>
+            <div><small>置信度</small><b class="${confidenceClass}">${item.confidence}%</b></div>
+            <div><small>预期收益</small><b class="${Number(item.expected_return_pct) >= 0 ? "positive" : "negative"}">${formatSignedPct(item.expected_return_pct)}</b></div>
+            <div><small>${item.horizon_days} 日区间</small><b>${formatPrice(item.expected_low)} - ${formatPrice(item.expected_high)}</b></div>
+            <div><small>目标位</small><b>${formatPrice(item.target_price)}</b></div>
+            <div><small>止损位</small><b>${formatPrice(item.stop_loss)}</b></div>
+          </div>
+          <p style="margin:0 0 6px;color:#64748b;font-size:12px;">风险等级：${escapeHtml(item.risk_level)} | 支撑：${formatPrice(item.support)} | 压力：${formatPrice(item.resistance)}</p>
+          ${reasons ? `<ul class="reason-list">${reasons}</ul>` : ""}
+        </div>`);
+      });
+
+      (result.errors || []).forEach(err => {
+        cards.push(`<div class="prediction-card bearish">
+          <div class="prediction-head"><span>${escapeHtml(err.symbol)}</span><span>取数失败</span></div>
+          <p>${escapeHtml(err.error)}</p>
+        </div>`);
+      });
+
+      etfPredictionList.innerHTML = cards.length
+        ? cards.join("")
+        : `<div class="prediction-card"><p>本次没有生成 ETF 预测。</p></div>`;
+    }
+
+    function formatPrice(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n.toFixed(3) : "--";
+    }
+
+    function formatSignedPct(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "--";
+      return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+    }
+
+    function formatMoney(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "--";
+      return "¥" + n.toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+    }
+
+    function renderFactorRank(rows) {
+      if (!rows.length) {
+        factorRank.style.display = "none";
+        factorRank.innerHTML = "";
+        return;
+      }
+      factorRank.style.display = "block";
+      factorRank.innerHTML = `<table>
+        <thead><tr><th>排名</th><th>代码</th><th>总分</th><th>Alpha013</th><th>Alpha015</th><th>质量代理</th><th>收盘价</th></tr></thead>
+        <tbody>${rows.map(row => `
+          <tr>
+            <td>${row.rank}</td>
+            <td>${escapeHtml(row.symbol)}</td>
+            <td>${Number(row.score).toFixed(4)}</td>
+            <td>${Number(row.alpha013).toFixed(6)}</td>
+            <td>${Number(row.alpha015).toFixed(6)}</td>
+            <td>${Number(row.quality).toFixed(6)}</td>
+            <td>${Number(row.close).toFixed(4)}</td>
+          </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // =====================================================================
+    // 渲染结果
+    // =====================================================================
+    function renderResults(result) {
+      const m = result.metrics;
+      // 指标卡片
+      setMetrics(m);
+
+      // 净值曲线副标题
+      eqSubtitle.textContent = `${result.symbol} | ${result.strategy} | ${m.total_trades} 笔交易`;
+
+      // 策略描述
+      const descMap = {
+        ma_cross: "双均线交叉策略：短均线上穿长均线时买入，下穿时卖出。趋势跟踪策略，适合有明显趋势的行情。",
+        rsi_reversal: "RSI 超卖超买反转策略：RSI 脱离超卖区回升时买入，脱离超买区回落时卖出。震荡市表现较好。",
+        macd_cross: "MACD 金叉死叉策略：MACD 线上穿信号线（金叉）买入，下穿（死叉）卖出。经典趋势跟踪策略。",
+        bollinger_reversion: "布林带均值回归策略：价格触及或跌破下轨买入，触及或升穿上轨卖出。假设价格会回归中轨。"
+      };
+      strategyDesc.textContent = descMap[result.strategy] || "";
+
+      // 交易信号流
+      renderSignalFlow(result.signals);
+
+      // 交易明细表
+      renderTrades(result.trades);
+
+      // 回测概要
+      renderSummary(result);
+
+      // 图表
+      renderEquityChart(result);
+      renderPriceChart(result);
+    }
+
+    // =====================================================================
+    // 指标卡片
+    // =====================================================================
+    function setMetrics(m) {
+      const fmt = (v, unit = "%") => v !== null && v !== undefined ? (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + unit : "--";
+      const cls = (v) => v > 0 ? "positive" : v < 0 ? "negative" : "zero";
+
+      if (!m) {
+        ["mTotalReturn","mAnnualReturn","mMaxDrawdown","mSharpe"].forEach(id => {
+          const el = $(id); el.textContent = "--"; el.className = "value zero";
+        });
+        return;
+      }
+      const tr = $("mTotalReturn");
+      tr.textContent = fmt(m.total_return);
+      tr.className = "value " + cls(m.total_return);
+
+      const ar = $("mAnnualReturn");
+      ar.textContent = fmt(m.annual_return);
+      ar.className = "value " + cls(m.annual_return);
+
+      const md = $("mMaxDrawdown");
+      md.textContent = fmt(m.max_drawdown);
+      md.className = "value negative";
+
+      const sh = $("mSharpe");
+      sh.textContent = m.sharpe.toFixed(2);
+      sh.className = "value " + (m.sharpe > 0 ? "positive" : "negative");
+    }
+
+    // =====================================================================
+    // 净值曲线图
+    // =====================================================================
+    function renderEquityChart(result) {
+      const ctx = document.getElementById("equityChart").getContext("2d");
+      if (equityChartInstance) equityChartInstance.destroy();
+
+      const labels = result.equity_curve.map(d => d.date);
+      const equity = result.equity_curve.map(d => d.equity);
+      const initCash = result.equity_curve.length > 0 ? result.equity_curve[0].equity : 100000;
+
+      equityChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "策略净值",
+            data: equity,
+            borderColor: "#0f766e",
+            backgroundColor: "rgba(15,118,110,.10)",
+            fill: true,
+            tension: .3,
+            pointRadius: 0,
+            borderWidth: 2
+          }, {
+            label: "基准净值",
+            data: equity.map(() => initCash),
+            borderColor: "#94a3b8",
+            borderDash: [6, 4],
+            pointRadius: 0,
+            borderWidth: 1.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: "index" },
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 14, padding: 14 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const val = ctx.parsed.y;
+                  const ret = ((val - initCash) / initCash * 100).toFixed(2);
+                  return `${ctx.dataset.label}: ¥${val.toFixed(2)} (${ret}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: { callback: v => "¥" + v.toLocaleString() },
+              grid: { color: "#edf2f7" }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 12 }
+            }
+          }
+        }
+      });
+    }
+
+    // =====================================================================
+    // 价格 + 买卖信号图
+    // =====================================================================
+    function renderPriceChart(result) {
+      const ctx = document.getElementById("priceChart").getContext("2d");
+      if (priceChartInstance) priceChartInstance.destroy();
+
+      const labels = result.price_series.map(d => d.date);
+      const prices = result.price_series.map(d => d.close);
+
+      // 分离买/卖点
+      const buyPoints = result.signals.filter(s => s.action === "buy");
+      const sellPoints = result.signals.filter(s => s.action === "sell");
+
+      const buyData = { x: [], y: [] };
+      const sellData = { x: [], y: [] };
+      const dateIndex = {};
+      labels.forEach((d, i) => { dateIndex[d] = i; });
+
+      buyPoints.forEach(s => {
+        const idx = dateIndex[s.date];
+        if (idx !== undefined) {
+          buyData.x.push(s.date);
+          buyData.y.push(s.price);
+        }
+      });
+      sellPoints.forEach(s => {
+        const idx = dateIndex[s.date];
+        if (idx !== undefined) {
+          sellData.x.push(s.date);
+          sellData.y.push(s.price);
+        }
+      });
+
+      priceChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "收盘价",
+              data: prices,
+              borderColor: "#2563eb",
+              backgroundColor: "rgba(37,99,235,.06)",
+              fill: true,
+              tension: .3,
+              pointRadius: 0,
+              borderWidth: 2,
+              order: 2
+            },
+            {
+              label: "买入信号",
+              data: buyData.y,
+              borderColor: "#10b981",
+              backgroundColor: "#10b981",
+              type: "scatter",
+              pointRadius: buyData.y.map(() => 7),
+              pointStyle: "triangle",
+              pointRotation: 0,
+              order: 0
+            },
+            {
+              label: "卖出信号",
+              data: sellData.y,
+              borderColor: "#ef4444",
+              backgroundColor: "#ef4444",
+              type: "scatter",
+              pointRadius: sellData.y.map(() => 7),
+              pointStyle: "rectRot",
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: "index" },
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 14, padding: 14 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.dataset.label === "买入信号") return "买入: ¥" + ctx.parsed.y.toFixed(2);
+                  if (ctx.dataset.label === "卖出信号") return "卖出: ¥" + ctx.parsed.y.toFixed(2);
+                  return `收盘: ¥${ctx.parsed.y.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: { ticks: { callback: v => "¥" + v.toFixed(0) }, grid: { color: "#edf2f7" } },
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }
+          }
+        }
+      });
+    }
+
+    // =====================================================================
+    // 信号流
+    // =====================================================================
+    function renderSignalFlow(signals) {
+      if (!signals || signals.length === 0) {
+        signalFlow.innerHTML = `<div style="color:#94a3b8;text-align:center;padding:20px 0;">暂无交易信号</div>`;
+        return;
+      }
+      signalFlow.innerHTML = signals.map((s, i) => {
+        const isBuy = s.action === "buy";
+        const icon = isBuy ? "bx bx-up-arrow-circle" : "bx bx-down-arrow-circle";
+        const color = isBuy ? "#065f46" : "#991b1b";
+        const bg = isBuy ? "#d1fae5" : "#fee2e2";
+        return `<div class="flow-item" style="border-left:3px solid ${color}">
+          <span class="fi-action" style="color:${color}">
+            <i class="${icon}" style="vertical-align:middle;"></i>
+            ${isBuy ? "买入" : "卖出"}
+          </span>
+          <span class="fi-price">¥${s.price.toFixed(2)}</span>
+          <span class="fi-date" style="color:#94a3b8;font-size:11px;margin-left:8px;">${s.date}</span>
+          ${s.reason ? `<span class="fi-reason">${s.reason}</span>` : ""}
+        </div>`;
+      }).join("");
+    }
+
+    // =====================================================================
+    // 交易明细表
+    // =====================================================================
+    function renderTrades(trades) {
+      if (!trades || trades.length === 0) {
+        tradeBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">回测期间未产生交易</td></tr>`;
+        tradeCount.textContent = "";
+        return;
+      }
+      tradeBody.innerHTML = trades.map((t, i) => {
+        const cls = t.return_pct > 0 ? "positive" : "negative";
+        const sign = t.return_pct >= 0 ? "+" : "";
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${t.buy_date}</td>
+          <td>${t.sell_date}</td>
+          <td>¥${t.buy_price.toFixed(2)}</td>
+          <td>¥${t.sell_price.toFixed(2)}</td>
+          <td class="${cls}">${sign}${(t.return_pct * 100).toFixed(2)}%</td>
+        </tr>`;
+      }).join("");
+      tradeCount.textContent = `（共 ${trades.length} 笔）`;
+    }
+
+    // =====================================================================
+    // 回测概要
+    // =====================================================================
+    function renderSummary(result) {
+      const m = result.metrics;
+      const params = result.params || {};
+      const paramStr = Object.entries(params)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(", ");
+
+      const winTrades = result.trades.filter(t => t.return_pct > 0).length;
+      const lossTrades = result.trades.filter(t => t.return_pct <= 0).length;
+
+      summaryPanel.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <tr><td style="padding:6px 8px; color:#657184;">股票代码</td><td style="padding:6px 8px; font-weight:700;">${result.symbol}</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">策略</td><td style="padding:6px 8px; font-weight:700;">${result.strategy}</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">参数</td><td style="padding:6px 8px; font-size:12px;">${paramStr}</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">总交易</td><td style="padding:6px 8px;">${m.total_trades} 笔</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">盈利交易</td><td style="padding:6px 8px; color:#0f9f6e;">${winTrades} 笔</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">亏损交易</td><td style="padding:6px 8px; color:#dc2626;">${lossTrades} 笔</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">胜率</td><td style="padding:6px 8px;">${(m.win_rate * 100).toFixed(1)}%</td></tr>
+          <tr><td style="padding:6px 8px; color:#657184;">单笔平均收益</td><td style="padding:6px 8px;" class="${m.avg_return_per_trade > 0 ? 'positive' : 'negative'}">${(m.avg_return_per_trade * 100).toFixed(2)}%</td></tr>
+        </table>
+      `;
+    }
+
+    // =====================================================================
+    // Enter 键触发
+    // =====================================================================
+    document.querySelectorAll("#controls input, #controls select").forEach(el => {
+      el.addEventListener("keydown", e => { if (e.key === "Enter") runBacktest(); });
     });
+
+    // =====================================================================
+    // 快捷键：Ctrl+Enter
+    // =====================================================================
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runBacktest();
+    });
+
+    console.log(`Quant Demo 前端已启动，后端地址: ${API_BASE}`);
+    console.log("提示：按 Ctrl+Enter 快速运行回测");
   </script>
 </body>
 </html>
